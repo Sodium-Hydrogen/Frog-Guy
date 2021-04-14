@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "528436246074",
+    "project_id": "frogguy-28a1e",
+    "storage_bucket": "frogguy-28a1e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528436246074:android:44815a8f37ad0552bbe703",
+        "android_client_info": {
+          "package_name": "com.example.frogguy"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "528436246074-lictv5fsnp179jme880nsst0onprminu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzdkimqgTK2w7SDgWC1NlxCPM_Hy_np00"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "528436246074-lictv5fsnp179jme880nsst0onprminu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
