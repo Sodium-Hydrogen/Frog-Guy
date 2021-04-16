@@ -13,7 +13,11 @@ class MainActivity : AppCompatActivity() {
         var leaderboardBtn = findViewById<Button>(R.id.showLeaderboardButton)
         var newSignUpBtn = findViewById<Button>(R.id.newSignUpButton)
         var loginButton = findViewById<Button>(R.id.loginButton)
+        var b = findViewById<Button>(R.id.bplay)
 
+        b.setOnClickListener {
+            startActivity(Intent(this,GameActivity::class.java))
+        }
         newSignUpBtn.setOnClickListener {
             startActivity(Intent(this, SignUpActivity::class.java))
         }
