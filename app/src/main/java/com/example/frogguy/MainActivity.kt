@@ -6,7 +6,6 @@ import android.graphics.Color
 import android.graphics.Paint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
@@ -64,14 +63,39 @@ class MainActivity : AppCompatActivity(){
 }
 
 class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float, var verticalPadding: Float, context: Context?) : View(context) {
-    private var frog = Sprite(floor(horzBlocks.toFloat() / 2), 0F)
-    private var roadSprites = ArrayList<Sprite>(0)
-    private var waterSprites = ArrayList<Sprite>(0)
-    private lateinit var canvas: Canvas
+    private var frog = Sprite(floor(horzBlocks.toFloat() / 2), 0F,)
 
+    private lateinit var canvas: Canvas
+    var roads = ArrayList<ObstaclePath>(0)
+    var rivers = ArrayList<ObstaclePath>(0)
     init {
         frog.color.color = Color.rgb(0, 120, 0)
+        frog.remainOnScreen = true
         this.setBackgroundColor(Color.BLACK)
+
+        roads = arrayListOf(
+                ObstaclePath(3,4F,2,true),
+                ObstaclePath(4,3F,2,true),
+                ObstaclePath(5,2F,2,true),
+                ObstaclePath(6,3F,2,true),
+                ObstaclePath(7,1F, 4, true),
+                ObstaclePath(9,-1F, 2, true),
+                ObstaclePath(10,-3F,2,true),
+                ObstaclePath(11,-2F,2,true),
+                ObstaclePath(12,-1F,2,true),
+                ObstaclePath(13,-4F, 4, true),
+
+        )
+//        roads = arrayListOf(arrayOf(8,5,4,ArrayList<Sprite>(0)), arrayOf(9,-5), arrayOf(10,5), arrayOf(11,-5))
+        rivers = arrayListOf(
+                ObstaclePath(16,2F, 4),
+                ObstaclePath(17,3F, 4),
+                ObstaclePath(18,-3F, 4),
+                ObstaclePath(19,4F, 2),
+                ObstaclePath(20,-2F, 4),
+                ObstaclePath(21,-5F, 2),
+
+        )
 
 
     }
@@ -82,55 +106,71 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
         field.color = Color.rgb(100, 50, 0)
         canvas?.drawRect(0F, verticalPadding, horzBlocks*blockDim, verticalPadding+vertBlocks*blockDim, field)
 
-        for(sp in waterSprites){
-            var spLoc = sp.toPixels()
-            canvas?.drawRect(spLoc[0], spLoc[1], spLoc[2], spLoc[3], sp.color)
+        for(pathType in arrayOf(roads, rivers)){
+            for(path in pathType) {
+                var row = verticalPadding + blockDim * (vertBlocks - path.verticalRow)
+                canvas?.drawRect(0F, row, horzBlocks * blockDim, row - blockDim, path.color)
+            }
         }
 
+        for(river in rivers){
+            for(sp in river.obs) {
+                var spLoc = sp.toPixels()
+                canvas?.drawRect(spLoc[0], spLoc[1], spLoc[2], spLoc[3], sp.color)
+            }
+        }
 
         var fLoc = frog.toPixels()
         canvas?.drawRect(fLoc[0], fLoc[1], fLoc[2], fLoc[3], frog.color)
 
-        for(sp in roadSprites){
-            var spLoc = sp.toPixels()
-            canvas?.drawRect(spLoc[0], spLoc[1], spLoc[2], spLoc[3], sp.color)
+        for(road in roads){
+            for(sp in road.obs) {
+                var spLoc = sp.toPixels()
+                canvas?.drawRect(spLoc[0], spLoc[1], spLoc[2], spLoc[3], sp.color)
+            }
         }
+
 
         super.onDraw(canvas)
     }
 
     fun manageSprites(){
-        if(roadSprites.size < 1){
-            roadSprites.add(Sprite(0F,10F, -(blockDim*2), xsize = 2F))
-        }
-        for(sp in roadSprites){
-            sp.xoffset += 5
-            if(sp.x > horzBlocks){
-                roadSprites.remove(sp)
+        for(pathType in arrayOf(roads, rivers)){
+            for(path in pathType) {
+                path.checkSpawn()
+                path.moveSprites()
+                if(path.verticalRow.toFloat() == frog.y){
+                    if(!path.frogSafe(frog)){
+                        frog.reset()
+                    }
+                }
             }
         }
-        if(waterSprites.size < 1){
-            waterSprites.add(Sprite(0F, 19F, -(blockDim*4), xsize = 4F, ysize = 0.6F))
-        }
-        for(sp in waterSprites){
-            sp.xoffset += 3
-            if(sp.x > horzBlocks){
-                waterSprites.remove(sp)
-            }
-        }
-
     }
 
     fun up() {
         if (++frog.y >= vertBlocks) {
             frog.y = vertBlocks - 1
         }
+        // This will cause x to be changed to the closest target x the remove all offset
+        if(frog.xoffset != 0F){
+            frog.xoffset += (frog.xoffset/abs(frog.xoffset))*blockDim/2
+            frog.xoffset = 0F
+        }
+
+
     }
 
     fun down() {
         if (--frog.y < 0) {
             frog.y = 0F
         }
+        // This will cause x to be changed to the closest target x the remove all offset
+        if(frog.xoffset != 0F){
+            frog.xoffset += (frog.xoffset/abs(frog.xoffset))*blockDim/2
+            frog.xoffset = 0F
+        }
+
     }
 
     fun left() {
@@ -145,16 +185,9 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
         }
     }
 
-    inner class Sprite(
-            var x: Float = 0F,
-            var y: Float = 0F,
-            var xoffsetInit: Float = 0F,
-            var yoffsetInit: Float = 0F,
-            var xsize: Float = 1F,
-            var ysize: Float = 1F){
+    inner class Sprite(var x: Float = 0F,var y: Float = 0F,var xoffsetInit: Float = 0F,var yoffsetInit: Float = 0F,var xsize: Float = 1F,var ysize: Float = 1F, var remainOnScreen:Boolean=false){
         var xoffset: Float = xoffsetInit
             set(newVal){
-                Log.i("frogger", field.toString())
                 if(newVal >= blockDim){
                     field = newVal-blockDim
                     x++
@@ -164,15 +197,47 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
                 }else{
                     field = newVal
                 }
+                if(remainOnScreen && x <= 0 && field < 0){
+                    x = 0F
+                    field = 0F
+                }else if(remainOnScreen && x >= horzBlocks-1 && field > 0){
+                    x = horzBlocks-1
+                    field = 0F
+                }
             }
         var yoffset: Float = yoffsetInit
         var color = Paint()
+
+        private var inital = arrayOf<Float>(x, y)
         init{
             color.color = Color.WHITE
         }
 
+        fun on(other: Sprite):Boolean{
+            var offsets = xoffset-other.xoffset
+            var start = if(blockDim/2 <= abs(offsets)){
+                x+(offsets/abs(offsets))
+            }else{x}
+            var end = start+xsize-1
+            if(y == other.y && start <= other.x && end >= other.x){
+                return true
+            }
+            return false
+        }
+        fun touches(other: Sprite):Boolean{
+            var start = x
+            if(xoffset < 0){
+                start--
+            }
+            var end = start+xsize
+            if(y == other.y && start <= other.x && end >= other.x){
+                return true
+            }
+            return false
+        }
+
         fun toPixels(): Array<Float> {
-            return Array<Float>(4) {
+            return Array(4) {
                 if (it % 2 == 0) {
                     blockDim * (x + ((it.toFloat() / 2) * xsize))+xoffset
                 } else {
@@ -180,6 +245,87 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
                 }
             }
         }
+
+        fun reset(){
+            x = inital[0]
+            y = inital[1]
+            xoffset = 0F
+            yoffset = 0F
+//            this.color.color = color
+        }
+    }
+    inner class ObstaclePath(var verticalRow: Int, var speed: Float, var maxObsticals: Int, var deadly: Boolean =false){
+        var obs = ArrayList<Sprite>(maxObsticals)
+        var maxLength = if(deadly){3}else{4}
+        var color = Paint()
+        var extraSprites = ArrayList<Sprite>(0)
+
+        init{
+            color.color = if(deadly){Color.BLACK}else{Color.BLUE}
+        }
+
+        fun checkSpawn(){
+            if(obs.size < maxObsticals && (0..2).random() <= 1 ){
+                for(sprite in obs){
+                    if(speed > 0 && sprite.x < 3){
+                        return
+                    }else if(speed < 0 && sprite.x + sprite.xsize > horzBlocks-3){
+                        return
+                    }
+                }
+                var len = (1..maxLength).random()
+                var startLoc = if(speed>0){0}else{horzBlocks}.toFloat()
+                var initOffset = if(speed>0){-len*blockDim}else{0}.toFloat()
+                obs.add(Sprite(startLoc, verticalRow.toFloat(), initOffset, 0F, len.toFloat(), 1F))
+            }
+        }
+        fun moveSprites(){
+            var tmpArr = obs.clone() as ArrayList<Sprite>
+            for(sprite in tmpArr){
+                sprite.xoffset += speed
+                if(speed > 0 && sprite.x > horzBlocks){
+                    obs.remove(sprite)
+                }else if(speed < 0 && sprite.x < 0-sprite.xsize){
+                    obs.remove(sprite)
+                }
+            }
+            tmpArr = obs.clone() as ArrayList<Sprite>
+            for(extra in tmpArr){
+                if(extra.y == verticalRow.toFloat()) {
+                    extra.xoffset += speed
+                }
+
+                if(!extra.remainOnScreen){
+                    if(speed > 0 && extra.x > horzBlocks){
+                        obs.remove(extra)
+                    }else if(speed < 0 && extra.x < 0-extra.xsize){
+                        obs.remove(extra)
+                    }
+                }
+            }
+        }
+        fun frogSafe(frog: Sprite): Boolean{
+            for(sprite in obs){
+                if(!deadly && sprite.on(frog)) {
+                    if(!extraSprites.contains(frog)){extraSprites.add(frog)}
+                    var offsetDif = sprite.xoffset - frog.xoffset
+                    if(abs(offsetDif) >= blockDim/2){
+                        frog.x -= offsetDif/abs(offsetDif)
+                    }
+                    frog.xoffset = sprite.xoffset
+                    return true
+
+                }else if(deadly && sprite.touches(frog)){
+                    return false
+                }
+            }
+            if(!deadly && extraSprites.contains(frog)){
+                extraSprites.remove(frog)
+            }
+            return deadly
+        }
+
+
     }
 }
 
@@ -187,10 +333,11 @@ class Updater(var updateInterval: Long, var gameCanvas: Frogger): Thread() {
     var kill = false
     override fun run() {
         while(!kill){
-            Thread.sleep(updateInterval)
+            sleep(updateInterval)
             gameCanvas.manageSprites()
             gameCanvas.invalidate()
         }
     }
 
 }
+
