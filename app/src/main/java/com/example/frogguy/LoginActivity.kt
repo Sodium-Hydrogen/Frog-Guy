@@ -1,5 +1,6 @@
 package com.example.frogguy
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
@@ -23,8 +24,7 @@ class LoginActivity : AppCompatActivity() {
             auth.signInWithEmailAndPassword(email.text.toString(), pwd.text.toString())
                 .addOnCompleteListener {
                     if(it.isSuccessful) {
-                        //start activity to somewhere
-                        Toast.makeText(this, "Successfully signed in", Toast.LENGTH_SHORT).show()
+                        startActivity(Intent(this, MainActivity::class.java))
                     }
                     else {
                         Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show()
