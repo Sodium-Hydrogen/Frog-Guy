@@ -8,41 +8,92 @@ import android.util.Log
 import android.widget.TextView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlin.properties.Delegates
 
 class LeaderboardActivity : AppCompatActivity() {
-    var currentScore : String = "None"
     lateinit var auth: FirebaseAuth
+    var bestScore1: Int = 0
+    var bestScore2: Int = 0
+    var bestScore3: Int = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         auth = FirebaseAuth.getInstance()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_leaderboard)
 
-        var name0 = findViewById<TextView>(R.id.name0)
         var name1 = findViewById<TextView>(R.id.name1)
         var name2 = findViewById<TextView>(R.id.name2)
-        var score0 = findViewById<TextView>(R.id.score0)
+        var name3 = findViewById<TextView>(R.id.name3)
         var score1 = findViewById<TextView>(R.id.score1)
         var score2 = findViewById<TextView>(R.id.score2)
+        var score3 = findViewById<TextView>(R.id.score3)
 
         var db = FirebaseFirestore.getInstance()
 
+        var sharedPreference : SharedPreferences = getSharedPreferences("sharedPreferences", Context.MODE_PRIVATE)
+        var editor : SharedPreferences.Editor = sharedPreference.edit()
+        clearScores(sharedPreference)
+        var newScore = sharedPreference.getInt("newScore", 0)
+        var newScorePlayer = auth.currentUser.email
+        var bestScore1 : Int = sharedPreference.getInt("bestScore1", -1)
+        var bestScore2 : Int = sharedPreference.getInt("bestScore2", -1)
+        var bestScore3 : Int = sharedPreference.getInt("bestScore3", -1)
+        Log.i("score", "${bestScore1}  ${bestScore2}  ${bestScore3}")
+        
+//
+
+//        if(newScore > bestScore1) {
+//            var temp = bestScore1
+//            bestScore1 = newScore
+//            bestScore2 = temp
+//            var editor : SharedPreferences.Editor = sharedPreference.edit()
+//            editor.putInt("bestScore2", bestScore2)
+//            editor.putInt("bestScore1", bestScore1)
+//            editor.apply()
+//            Log.i("score", "bestScore2 ${bestScore2}")
+//            Log.i("score", "bestScore1 ${bestScore1}")
+//        }
+//        else if(newScore > bestScore2) {
+//            var temp = bestScore2
+//            bestScore2 = newScore
+//            bestScore3 = temp
+//            var editor : SharedPreferences.Editor = sharedPreference.edit()
+//            editor.putInt("bestScore3", bestScore3)
+//            editor.putInt("bestScore2", bestScore2)
+//            editor.apply()
+//        }
+//        else if(newScore > bestScore3) {
+//            bestScore3 = newScore
+//            var editor : SharedPreferences.Editor = sharedPreference.edit()
+//            editor.putInt("bestScore3", bestScore3)
+//            editor.apply()
+//        }
+//
+//
+//
+//
+//
+//        score1.text = bestScore1.toString()
+//        score2.text = bestScore2.toString()
+//        score3.text = bestScore3.toString()
+
+
         //to get score from last player
-        var score = intent.getStringExtra("score")
 //        val sharedPreference : SharedPreferences = getSharedPreferences("sharedPreferences", Context.MODE_PRIVATE)
 //        val editor : SharedPreferences.Editor = sharedPreference.edit()
 //        val score : String? = sharedPreference.getString("score", null)
 
 
-        var highScores = arrayListOf(score0.text.toString(), score1.text.toString(), score2.text.toString())
-
-
-        if(score != null) {
-            db.collection("Leaderboard").document(0.toString()).get()
-                .addOnCompleteListener {
-
-                }
-
-        }
+//        var highScores = arrayListOf(score0.text.toString(), score1.text.toString(), score2.text.toString())
+//
+//
+//        if(score != null) {
+//            db.collection("Leaderboard").document(0.toString()).get()
+//                .addOnCompleteListener {
+//
+//                }
+//
+//        }
 
 //        if(score != null) {
 //            Log.i("score", score)
@@ -117,28 +168,28 @@ class LeaderboardActivity : AppCompatActivity() {
 //                }
 //        }
 
-        db.collection("Leaderboard").document(0.toString()).get()
-                .addOnCompleteListener {
-                    if (it.isSuccessful) {
-                        name0.text = it.result?.data?.get("email").toString()
-                        score0.text = it.result?.data?.get("score").toString()
-                    }
-                }
-        db.collection("Leaderboard").document(1.toString()).get()
-                .addOnCompleteListener {
-                    if (it.isSuccessful) {
-                        name1.text = it.result?.data?.get("email").toString()
-                        score1.text = it.result?.data?.get("score").toString()
-                    }
-                }
-
-        db.collection("Leaderboard").document(2.toString()).get()
-                .addOnCompleteListener {
-                    if (it.isSuccessful) {
-                        name2.text = it.result?.data?.get("email").toString()
-                        score2.text = it.result?.data?.get("score").toString()
-                    }
-                }
+//        db.collection("Leaderboard").document(0.toString()).get()
+//                .addOnCompleteListener {
+//                    if (it.isSuccessful) {
+//                        name0.text = it.result?.data?.get("email").toString()
+//                        score0.text = it.result?.data?.get("score").toString()
+//                    }
+//                }
+//        db.collection("Leaderboard").document(1.toString()).get()
+//                .addOnCompleteListener {
+//                    if (it.isSuccessful) {
+//                        name1.text = it.result?.data?.get("email").toString()
+//                        score1.text = it.result?.data?.get("score").toString()
+//                    }
+//                }
+//
+//        db.collection("Leaderboard").document(2.toString()).get()
+//                .addOnCompleteListener {
+//                    if (it.isSuccessful) {
+//                        name2.text = it.result?.data?.get("email").toString()
+//                        score2.text = it.result?.data?.get("score").toString()
+//                    }
+//                }
     }
 
     private fun updateHighScoresArr(db: FirebaseFirestore, highScores: ArrayList<String>): ArrayList<String> {
@@ -190,6 +241,15 @@ class LeaderboardActivity : AppCompatActivity() {
             }
         }
         return false
+    }
+
+    private fun clearScores(sharedPreferences: SharedPreferences): Unit {
+        sharedPreferences.edit().remove("bestPlayer1")
+        sharedPreferences.edit().remove("bestPlayer2")
+        sharedPreferences.edit().remove("bestPlayer3")
+        sharedPreferences.edit().remove("bestScore1")
+        sharedPreferences.edit().remove("bestScore2")
+        sharedPreferences.edit().remove("bestScore3")
     }
 
 }
