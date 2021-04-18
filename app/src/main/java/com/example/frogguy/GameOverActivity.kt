@@ -36,73 +36,75 @@ class GameOverActivity : AppCompatActivity() {
 
 
         //we need the score from somewhere. Right now I'm just setting it to 100
-        var newScore = 300
+        var newScore = 800
 
         scoreValue.text = newScore.toString()
-
-        //save the score to disk
-        var sharedPreference : SharedPreferences = getSharedPreferences("sharedPreferences", Context.MODE_PRIVATE)
-        var editor : SharedPreferences.Editor = sharedPreference.edit()
 
         var db = FirebaseFirestore.getInstance()
 
 
-        db.collection("Scores").document(currentUserId).get()
-            .addOnCompleteListener{
-                if(it.isSuccessful) {
-                    var strScore = it.result?.data?.get("score")?.toString()
-                    if (strScore != null) {
-                        currentScore = strScore
-                        Toast.makeText(this, "Score already exists", Toast.LENGTH_SHORT).show()
-                        if(newScore > currentScore.toInt()) {
-                            db.collection("Scores").document(currentUserId).update("score", newScore.toString())
-                            currentScore = newScore.toString()
-//                            val score : String? = sharedPreference.getString("score", null)
-//                            if(score == null) {
-//                                editor.apply {
-//                                    putString("score", currentScore)
-//                                }.apply()
-//                            }
-//                            else {
-//                                sharedPreference.edit().remove("score").commit()
-//                                editor.apply {
-//                                    putString("score", currentScore)
-//                                }.apply()
-//                            }
-                        }
-//                        else {
-//                            editor.apply {
-//                                putString("score", currentScore)
-//                            }.apply()
+//        db.collection("Scores").document(currentUserId).get()
+//            .addOnCompleteListener{
+//                if(it.isSuccessful) {
+//                    var strScore = it.result?.data?.get("score")?.toString()
+//                    if (strScore != null) {
+//                        currentScore = strScore
+//                        Toast.makeText(this, "Score already exists", Toast.LENGTH_SHORT).show()
+//                        if(newScore > currentScore.toInt()) {
+//                            db.collection("Scores").document(currentUserId).update("score", newScore.toString())
+//                            currentScore = newScore.toString()
+////                            val score : String? = sharedPreference.getString("score", null)
+////                            if(score == null) {
+////                                editor.apply {
+////                                    putString("score", currentScore)
+////                                }.apply()
+////                            }
+////                            else {
+////                                sharedPreference.edit().remove("score").commit()
+////                                editor.apply {
+////                                    putString("score", currentScore)
+////                                }.apply()
+////                            }
 //                        }
-                    }
-                    else {
-                        Toast.makeText(this, "document does not exist", Toast.LENGTH_SHORT).show()
-                        var score : MutableMap<String, Any?> = HashMap()
-                        score["userId"] = auth.currentUser.uid
-                        score["score"] = newScore
-                        db.collection("Scores").document(currentUserId).set(score)
-                            .addOnCompleteListener {doc ->
-                                if(doc.isSuccessful) {
-                                    Toast.makeText(this, "Your score has been added.", Toast.LENGTH_SHORT).show()
-                                    currentScore = newScore.toString()
-//                                    editor.apply {
-//                                        putString("score", newScore.toString())
-//                                    }.apply()
-                                }
-                                else {
-                                    Toast.makeText(this, "Could not add score to db", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                    }
-                }
-            }
+////                        else {
+////                            editor.apply {
+////                                putString("score", currentScore)
+////                            }.apply()
+////                        }
+//                    }
+//                    else {
+//                        Toast.makeText(this, "document does not exist", Toast.LENGTH_SHORT).show()
+//                        var score : MutableMap<String, Any?> = HashMap()
+//                        score["userId"] = auth.currentUser.uid
+//                        score["score"] = newScore
+//                        db.collection("Scores").document(currentUserId).set(score)
+//                            .addOnCompleteListener {doc ->
+//                                if(doc.isSuccessful) {
+//                                    Toast.makeText(this, "Your score has been added.", Toast.LENGTH_SHORT).show()
+//                                    currentScore = newScore.toString()
+////                                    editor.apply {
+////                                        putString("score", newScore.toString())
+////                                    }.apply()
+//                                }
+//                                else {
+//                                    Toast.makeText(this, "Could not add score to db", Toast.LENGTH_SHORT).show()
+//                                }
+//                            }
+//                    }
+//                }
+//            }
 
 
         leaderboardBtn.setOnClickListener {
+            //save the score to disk
+            var sharedPreference : SharedPreferences = getSharedPreferences("sharedPreferences", Context.MODE_PRIVATE)
+            var editor : SharedPreferences.Editor = sharedPreference.edit()
+            editor.putInt("newScore", newScore)
+            editor.apply()
+
             var intent = Intent(this, LeaderboardActivity::class.java)
-            intent.putExtra("score", currentScore)
             startActivity(intent)
+            finish()
         }
 
         mainBtn.setOnClickListener {
