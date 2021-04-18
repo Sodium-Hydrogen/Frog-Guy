@@ -36,7 +36,7 @@ class GameOverActivity : AppCompatActivity() {
 
 
         //we need the score from somewhere. Right now I'm just setting it to 100
-        var newScore = 100
+        var newScore = 300
 
         scoreValue.text = newScore.toString()
 
@@ -49,62 +49,60 @@ class GameOverActivity : AppCompatActivity() {
 
         db.collection("Scores").document(currentUserId).get()
             .addOnCompleteListener{
-                Log.i("here", "${it.isSuccessful}")
                 if(it.isSuccessful) {
                     var strScore = it.result?.data?.get("score")?.toString()
                     if (strScore != null) {
                         currentScore = strScore
                         Toast.makeText(this, "Score already exists", Toast.LENGTH_SHORT).show()
-                        //comparing times
                         if(newScore > currentScore.toInt()) {
                             db.collection("Scores").document(currentUserId).update("score", newScore.toString())
+                            currentScore = newScore.toString()
+//                            val score : String? = sharedPreference.getString("score", null)
+//                            if(score == null) {
+//                                editor.apply {
+//                                    putString("score", currentScore)
+//                                }.apply()
+//                            }
+//                            else {
+//                                sharedPreference.edit().remove("score").commit()
+//                                editor.apply {
+//                                    putString("score", currentScore)
+//                                }.apply()
+//                            }
                         }
+//                        else {
+//                            editor.apply {
+//                                putString("score", currentScore)
+//                            }.apply()
+//                        }
                     }
-                }
-                else {
-                    Toast.makeText(this, "document does not exist", Toast.LENGTH_SHORT).show()
-                    var score : MutableMap<String, Any?> = HashMap()
-                    score["userId"] = auth.currentUser.uid
-                    score["score"] = newScore
-                    db.collection("Scores").document(currentUserId).set(score)
-                        .addOnCompleteListener {doc ->
-                            if(doc.isSuccessful) {
-                                Toast.makeText(this, "Your score has been added.", Toast.LENGTH_SHORT).show()
+                    else {
+                        Toast.makeText(this, "document does not exist", Toast.LENGTH_SHORT).show()
+                        var score : MutableMap<String, Any?> = HashMap()
+                        score["userId"] = auth.currentUser.uid
+                        score["score"] = newScore
+                        db.collection("Scores").document(currentUserId).set(score)
+                            .addOnCompleteListener {doc ->
+                                if(doc.isSuccessful) {
+                                    Toast.makeText(this, "Your score has been added.", Toast.LENGTH_SHORT).show()
+                                    currentScore = newScore.toString()
+//                                    editor.apply {
+//                                        putString("score", newScore.toString())
+//                                    }.apply()
+                                }
+                                else {
+                                    Toast.makeText(this, "Could not add score to db", Toast.LENGTH_SHORT).show()
+                                }
                             }
-                            else {
-                                Toast.makeText(this, "Could not add score to db", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+                    }
                 }
             }
 
 
-//        if(currentScore == "") {
-//            Toast.makeText(this, currentScore, Toast.LENGTH_SHORT).show()
-//            var score : MutableMap<String, Any?> = HashMap()
-//            score["userId"] = auth.currentUser.uid
-//            score["score"] = newScore
-//            db.collection("Scores").document(currentUserId).set(score)
-//                .addOnCompleteListener {
-//                    if(it.isSuccessful) {
-//                        Toast.makeText(this, "Your score has been added.", Toast.LENGTH_SHORT).show()
-//                    }
-//                    else {
-//                        Toast.makeText(this, "Could not add score to db", Toast.LENGTH_SHORT).show()
-//                    }
-//                }
-//        }
-//        else {
-//            Toast.makeText(this, "Score already exists", Toast.LENGTH_SHORT).show()
-//            //comparing times
-//            if(newScore > currentScore.toInt()) {
-//                db.collection("Scores").document(currentUserId).update("score", newScore.toString())
-//            }
-//        }
-
-
         leaderboardBtn.setOnClickListener {
-            startActivity(Intent(this, LeaderboardActivity::class.java))
+            var intent = Intent(this, LeaderboardActivity::class.java)
+            intent.putExtra("score", currentScore)
+            startActivity(intent)
         }
 
         mainBtn.setOnClickListener {
@@ -122,22 +120,6 @@ class GameOverActivity : AppCompatActivity() {
             alert.setNegativeButton("No") { _: DialogInterface, _: Int -> }
             alert.show()
         }
-    }
-
-    fun findScore(db: FirebaseFirestore): Unit {
-        var currentUserId = auth.currentUser.uid
-        db.collection("Scores").document(currentUserId).get()
-            .addOnSuccessListener {
-                Toast.makeText(this, it.id, Toast.LENGTH_SHORT).show()
-                if(it.exists()) {
-                    Toast.makeText(this, "document exists", Toast.LENGTH_SHORT).show()
-                    var strScore = it["score"]!!.toString()
-                    currentScore = strScore
-                }
-                else {
-                    Toast.makeText(this, "document does not exist", Toast.LENGTH_SHORT).show()
-                }
-            }
     }
 
 
