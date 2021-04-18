@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
+import android.widget.Button
 import android.widget.TextView
 import androidx.core.view.GestureDetectorCompat
 import kotlin.math.abs
@@ -31,7 +32,7 @@ class GameActivity : AppCompatActivity(){
         var vertPadding = (height - vertBlockCount*blockDim)/2
 
 
-        frog = Frogger(blockDim, vertBlockCount, horzBlockCount, vertPadding, this)
+        frog = Frogger(blockDim, vertBlockCount, horzBlockCount, vertPadding, false,this)
         mDetector = GestureDetectorCompat(this, MyGestureListener())
         setContentView(frog)
 
@@ -62,12 +63,16 @@ class GameActivity : AppCompatActivity(){
     }
 }
 
-class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float, var verticalPadding: Float, context: Context?) : View(context) {
+class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float, var verticalPadding: Float, var endless: Boolean, context: Context?) : View(context) {
     private var frog = Sprite(floor(horzBlocks.toFloat() / 2), 0F)
+    private var won = false
+    private var score = 0
+    private lateinit var nextLevelBtn: Button
 
     private lateinit var canvas: Canvas
     var roads = ArrayList<ObstaclePath>(0)
     var rivers = ArrayList<ObstaclePath>(0)
+
     init {
         frog.color.color = Color.rgb(0, 120, 0)
         frog.remainOnScreen = true
@@ -75,15 +80,15 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
 
         roads = arrayListOf(
                 ObstaclePath(3,4F,2,true),
-                ObstaclePath(4,3F,2,true),
+                ObstaclePath(4,3F,1,true),
                 ObstaclePath(5,2F,2,true),
                 ObstaclePath(6,3F,2,true),
-                ObstaclePath(7,1F, 4, true),
+                ObstaclePath(7,1F, 3, true),
                 ObstaclePath(9,-1F, 2, true),
                 ObstaclePath(10,-3F,2,true),
-                ObstaclePath(11,-2F,2,true),
+                ObstaclePath(11,-5F,1,true),
                 ObstaclePath(12,-1F,2,true),
-                ObstaclePath(13,-4F, 4, true)
+                ObstaclePath(13,-2F, 3, true)
 
                 )
 //        roads = arrayListOf(arrayOf(8,5,4,ArrayList<Sprite>(0)), arrayOf(9,-5), arrayOf(10,5), arrayOf(11,-5))
@@ -98,35 +103,49 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
                 )
 
 
+
     }
 
     override fun onDraw(canvas: Canvas?) {
 
-        var field = Paint()
-        field.color = Color.rgb(100, 50, 0)
-        canvas?.drawRect(0F, verticalPadding, horzBlocks*blockDim, verticalPadding+vertBlocks*blockDim, field)
+        if(won){
+            // Win message or redirect here
+        }else {
 
-        for(pathType in arrayOf(roads, rivers)){
-            for(path in pathType) {
-                var row = verticalPadding + blockDim * (vertBlocks - path.verticalRow)
-                canvas?.drawRect(0F, row, horzBlocks * blockDim, row - blockDim, path.color)
+            var field = Paint()
+            field.color = Color.rgb(100, 50, 0)
+            canvas?.drawRect(0F, verticalPadding, horzBlocks * blockDim, verticalPadding + vertBlocks * blockDim, field)
+
+            for (pathType in arrayOf(roads, rivers)) {
+                for (path in pathType) {
+                    var row = verticalPadding + blockDim * (vertBlocks - path.verticalRow)
+                    canvas?.drawRect(0F, row, horzBlocks * blockDim, row - blockDim, path.color)
+                }
             }
-        }
 
-        for(river in rivers){
-            for(sp in river.obs) {
-                var spLoc = sp.toPixels()
-                canvas?.drawRect(spLoc[0], spLoc[1], spLoc[2], spLoc[3], sp.color)
+            if(!endless){
+                var goal = Paint()
+                goal.color = Color.YELLOW
+                canvas?.drawRect(0F, verticalPadding, horzBlocks*blockDim, verticalPadding+blockDim, goal)
             }
-        }
 
-        var fLoc = frog.toPixels()
-        canvas?.drawRect(fLoc[0], fLoc[1], fLoc[2], fLoc[3], frog.color)
+            for (river in rivers) {
+                for (sp in river.obs) {
+                    var spLoc = sp.toPixels()
+                    canvas?.drawRect(spLoc[0], spLoc[1], spLoc[2], spLoc[3], sp.color)
+                }
+            }
 
-        for(road in roads){
-            for(sp in road.obs) {
-                var spLoc = sp.toPixels()
-                canvas?.drawRect(spLoc[0], spLoc[1], spLoc[2], spLoc[3], sp.color)
+
+
+            var fLoc = frog.toPixels()
+            canvas?.drawRect(fLoc[0], fLoc[1], fLoc[2], fLoc[3], frog.color)
+
+            for (road in roads) {
+                for (sp in road.obs) {
+                    var spLoc = sp.toPixels()
+                    canvas?.drawRect(spLoc[0], spLoc[1], spLoc[2], spLoc[3], sp.color)
+                }
             }
         }
 
@@ -150,7 +169,11 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
 
     fun up() {
         if (++frog.y >= vertBlocks) {
+
             frog.y = vertBlocks - 1
+        }
+        if(!endless && frog.y == vertBlocks -1 ){
+            won=true
         }
         // This will cause x to be changed to the closest target x the remove all offset
         if(frog.xoffset != 0F){
