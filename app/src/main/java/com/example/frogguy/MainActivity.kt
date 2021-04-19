@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.Toast
+import androidx.core.view.isVisible
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -20,8 +21,14 @@ class MainActivity : AppCompatActivity() {
         var newSignUpBtn = findViewById<Button>(R.id.newSignUpButton)
         var loginBtn = findViewById<Button>(R.id.loginButton)
         var b = findViewById<Button>(R.id.bplay)
-        var gameOverBtn = findViewById<Button>(R.id.gameOverButton) // this button is just to test how things are working
         var db = FirebaseFirestore.getInstance()
+        var logoutBtn = findViewById<Button>(R.id.logoutButton)
+
+        if(auth.currentUser != null) {
+            loginBtn.isVisible = false
+            newSignUpBtn.isVisible = false
+            logoutBtn.isVisible = true
+        }
 
         var newScore = intent.getIntExtra("score", -1)
         if (newScore != -1) {
@@ -33,23 +40,20 @@ class MainActivity : AppCompatActivity() {
                         if (it.isSuccessful) {
                             var strScore = it.result?.data?.get("score")?.toString()
                             if (strScore != null) {
-                                Toast.makeText(this, "Score already exists", Toast.LENGTH_SHORT).show()
                                 if (newScore > strScore.toInt()) {
-                                    Log.i("score", "score is larger than current score in db")
-                                    Toast.makeText(this, "Updated Score", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(this, "Your score has been updated!", Toast.LENGTH_SHORT).show()
                                     db.collection("Scores").document(newScoreUserId).update("score", newScore.toString())
                                 }
                             } else {
-                                Toast.makeText(this, "document does not exist", Toast.LENGTH_SHORT).show()
                                 var score: MutableMap<String, Any?> = HashMap()
                                 score["email"] = newScoreUserEmail
                                 score["score"] = newScore
                                 db.collection("Scores").document(newScoreUserId).set(score)
                                         .addOnCompleteListener { doc ->
                                             if (doc.isSuccessful) {
-                                                Toast.makeText(this, "Your score has been added.", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(this, "Your score has been added!", Toast.LENGTH_SHORT).show()
                                             } else {
-                                                Toast.makeText(this, "Could not add score to db", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(this, "Could not add score to the database.", Toast.LENGTH_SHORT).show()
                                             }
                                         }
                             }
@@ -60,7 +64,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         b.setOnClickListener {
-            startActivity(Intent(this,GameActivity::class.java))
+            if(auth.currentUser != null) {
+                startActivity(Intent(this, GameActivity::class.java))
+            }
+            else {
+                Toast.makeText(this, "You must be signed in to play.", Toast.LENGTH_SHORT).show()
+            }
         }
         newSignUpBtn.setOnClickListener {
             startActivity(Intent(this, SignUpActivity::class.java))
@@ -73,9 +82,10 @@ class MainActivity : AppCompatActivity() {
         leaderboardBtn.setOnClickListener {
             startActivity(Intent(this, LeaderboardActivity::class.java))
         }
-
-        gameOverBtn.setOnClickListener {
-            startActivity(Intent(this, GameOverActivity::class.java))
+        logoutBtn.setOnClickListener {
+            auth.signOut()
+            startActivity(Intent(this, MainActivity::class.java))
         }
+
     }
 }

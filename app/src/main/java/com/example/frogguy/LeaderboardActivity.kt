@@ -2,7 +2,6 @@ package com.example.frogguy
 
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -12,8 +11,6 @@ import android.view.ViewGroup
 import android.widget.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlin.math.absoluteValue
-import kotlin.properties.Delegates
 
 class LeaderboardActivity : AppCompatActivity() {
     lateinit var auth: FirebaseAuth
@@ -26,42 +23,34 @@ class LeaderboardActivity : AppCompatActivity() {
         var scoresList = findViewById<ListView>(R.id.scoresList)
         var allScores = ArrayList<String>()
         var allScorePairs = ArrayList<Pair<String, Int>>()
-        var backButton = findViewById<Button>(R.id.backButton)
+        var mainBtn = findViewById<Button>(R.id.mainButton)
         var map :MutableMap<String, Int> = HashMap()
         var sortedMap : MutableMap<String, Int> = HashMap()
 
         var db = FirebaseFirestore.getInstance()
 
-        backButton.setOnClickListener {
+
+
+        mainBtn.setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
         }
 
         db.collection("Scores").get()
                 .addOnCompleteListener { scores ->
+                    Log.i("score", "here")
                     if(scores.isSuccessful) {
                         for(score in scores.result!!) {
                             var userScore = score.data["score"].toString()
                             var userEmail = score.data["email"].toString()
                             var scorePair = Pair(userEmail, userScore.toInt())
-                            Log.i("score", "Score pair: ${scorePair}")
                             allScorePairs.add(scorePair)
 
                             allScorePairs.sortedBy { (key, value) -> value}
-
-//                            map.put(userEmail, userScore.toInt())
-////                            sortedMap = map.toSortedMap()
-//
-//                            map.toList()
-//                                    .sortedBy { (key, value) -> value }
-//                                    .toMap()
-//                            Log.i("score", sortedMap.toString())
-                            Log.i("score", allScorePairs.toString())
                         }
                         for(scorePair in allScorePairs) {
                             var fullScore = "${scorePair.first} - ${scorePair.second}"
-                            Log.i("score", "Full score: $fullScore")
+                            Log.i("score", allScores.toString())
                             allScores.add(fullScore)
-                            Log.i("score", "all scores array: ${allScores.toString()}")
                         }
                         var listAdapter: ArrayAdapter<String> = ArrayAdapter(this, android.R.layout.simple_expandable_list_item_1, allScores)
                         scoresList.adapter = myAdapter(allScores, this)
