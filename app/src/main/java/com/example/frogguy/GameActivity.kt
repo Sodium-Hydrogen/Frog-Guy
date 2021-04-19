@@ -95,9 +95,10 @@ class GameActivity : AppCompatActivity(){
 class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float, var verticalPadding: Float, var endless: Boolean, context: Context?) : View(context) {
     private var frog = Sprite(floor(horzBlocks.toFloat() / 2), 0F)
     private var won = false
+    var kill_thread = false
     private var score = 0
     private lateinit var nextLevelBtn: Button
-
+    private var difficulty = 0
     private lateinit var canvas: Canvas
     var roads = ArrayList<ObstaclePath>(0)
     var rivers = ArrayList<ObstaclePath>(0)
@@ -108,31 +109,38 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
         frog.color.color = Color.rgb(0, 120, 0)
         frog.remainOnScreen = true
         this.setBackgroundColor(Color.BLACK)
+        buildObstacles()
+    }
+    fun buildObstacles(){
 
         roads = arrayListOf(
-                ObstaclePath(3, 4F, 2, true),
-                ObstaclePath(4, 3F, 1, true),
-                ObstaclePath(5, 2F, 2, true),
-                ObstaclePath(6, 3F, 2, true),
-                ObstaclePath(7, 1F, 3, true),
-                ObstaclePath(9, -1F, 2, true),
-                ObstaclePath(10, -3F, 2, true),
-                ObstaclePath(11, -5F, 1, true),
-                ObstaclePath(12, -1F, 2, true),
-                ObstaclePath(13, -2F, 3, true)
+                ObstaclePath(3, 2F+floor((difficulty+1)/2F), 2+floor(difficulty/2F).toInt(), true),
+                ObstaclePath(4, 1F+floor((difficulty+1)/2F), 1+floor(difficulty/2F).toInt(), true),
+                ObstaclePath(5, 3F+floor((difficulty+1)/2F), 2+floor(difficulty/2F).toInt(), true),
+                ObstaclePath(6, 1.2F+floor((difficulty+1)/2F), 2+floor(difficulty/2F).toInt(), true),
+                ObstaclePath(7, 0.5F+floor((difficulty+1)/2F), 3+floor(difficulty/2F).toInt(), true),
+
+                ObstaclePath(9, -0.5F-floor((difficulty+1)/2F), 2+floor(difficulty/2F).toInt(), true),
+                ObstaclePath(10, -2F-floor((difficulty+1)/2F), 2+floor(difficulty/2F).toInt(), true),
+                ObstaclePath(11, -3F-floor((difficulty+1)/2F), 1+floor(difficulty/2F).toInt(), true),
+                ObstaclePath(12, -0.75F-floor((difficulty+1)/2F), 2+floor(difficulty/2F).toInt(), true),
+                ObstaclePath(13, -1F-floor((difficulty+1)/2F), 3+floor(difficulty/2F).toInt(), true)
 
         )
 //        roads = arrayListOf(arrayOf(8,5,4,ArrayList<Sprite>(0)), arrayOf(9,-5), arrayOf(10,5), arrayOf(11,-5))
         rivers = arrayListOf(
-                ObstaclePath(16, 2F, 4),
-                ObstaclePath(17, 3F, 4),
-                ObstaclePath(18, -3F, 4),
-                ObstaclePath(19, 4F, 2),
-                ObstaclePath(20, -2F, 4),
-                ObstaclePath(21, -5F, 2)
+                ObstaclePath(16, 0.5F+floor((difficulty+1)/2F), 4-floor(difficulty/2F).toInt()),
+                ObstaclePath(17, 1F+floor((difficulty+1)/2F), 4-floor(difficulty/2F).toInt()),
+                ObstaclePath(18, -1F-floor((difficulty+1)/2F), 4-floor(difficulty/2F).toInt()),
+                ObstaclePath(19, 2F+floor((difficulty+1)/2F), 3-floor(difficulty/2F).toInt()),
+                ObstaclePath(20, -0.75F-floor((difficulty+1)/2F), 4-floor(difficulty/2F).toInt()),
+                ObstaclePath(21, -3F-floor((difficulty+1)/2F), 3-floor(difficulty/2F).toInt())
 
         )
-
+        // initial game ticks to make game a little more random
+        for(i in (0..200)) {
+            manageSprites()
+        }
 
 
     }
@@ -155,7 +163,7 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
         }else {
 
             var field = Paint()
-            field.color = Color.rgb(100, 50, 0)
+            field.color = Color.rgb(0, 80, 0)
             canvas?.drawRect(0F, verticalPadding, horzBlocks * blockDim, verticalPadding + vertBlocks * blockDim, field)
 
             for (pathType in arrayOf(roads, rivers)) {
@@ -166,9 +174,20 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
             }
 
             if(!endless){
-                var goal = Paint()
-                goal.color = Color.YELLOW
-                canvas?.drawRect(0F, verticalPadding, horzBlocks * blockDim, verticalPadding + blockDim, goal)
+                var goal_b = Paint()
+                goal_b.color = Color.BLACK
+                var goal_w = Paint()
+                goal_w.color = Color.WHITE
+                for(row in (0..2)) {
+                    for (i in (0..(horzBlocks * 3).toInt())) {
+                        canvas?.drawRect(i * (blockDim / 3), verticalPadding+(row*(blockDim/3)), (i + 1) * (blockDim / 3), verticalPadding + ((row+1)*(blockDim/3)),
+                                if ((i+row )% 2 == 0) {
+                                    goal_w
+                                } else {
+                                    goal_b
+                                })
+                    }
+                }
             }
 
             for (river in rivers) {
@@ -376,12 +395,16 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
                 if (survived) {
                     alert.setTitle("Victory")
                     alert.setMessage("You completed this level! move on to try for a better score, or save this score?")
-                    alert.setPositiveButton("Continue", { dialogInterface: DialogInterface, i: Int -> }) // we have to do even less than we had to do with the other one :)
+                    alert.setPositiveButton("Continue", { dialogInterface: DialogInterface, i: Int ->
+                        difficulty++
+                        buildObstacles()
+                    }) // we have to do even less than we had to do with the other one :)
                     alert.setNegativeButton("Save my score and exit", { dialogInterface: DialogInterface, i: Int ->
                         var intent = Intent(context, MainActivity::class.java)
                         intent.putExtra("score",score)
                         // startActivity(intent)
                         // ((Activity)context).startActivity(intent)
+                        kill_thread = true
                         context.startActivity(intent)
                     })
 
@@ -390,7 +413,11 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
                 }else {
                     alert.setTitle("Defeat")
                     alert.setMessage("You died, try again for a better score, or save this score to see where it is on the leaderboard? ")
-                    alert.setPositiveButton("Try again", { dialogInterface: DialogInterface, i: Int -> score = 0}) // that's all we have to do
+                    alert.setPositiveButton("Try again", { dialogInterface: DialogInterface, i: Int ->
+                        score = 0
+                        difficulty = 0
+                        buildObstacles()
+                    }) // that's all we have to do
 
                     alert.setNegativeButton("Save my score and exit") { dialogInterface: DialogInterface, i: Int -> } // quit the game, and save the score :)
 
@@ -398,6 +425,7 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
                         intent.putExtra("score",score)
                         // startActivity(intent)
                         // ((Activity)context).startActivity(intent)
+                        kill_thread = true
                         context.startActivity(intent)
                     }) // quit the game, and save the score :)
                     alert.show()
@@ -428,6 +456,9 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
                     }
                     sprite.setImage()
                 }
+            }
+            if (maxObsticals <=0){
+                maxObsticals = 1
             }
         }
 
@@ -506,7 +537,7 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
 class Updater(var updateInterval: Long, var gameCanvas: Frogger): Thread() {
     var kill = false
     override fun run() {
-        while(!kill){
+        while(!kill && !gameCanvas.kill_thread){
             sleep(updateInterval)
             gameCanvas.manageSprites()
             gameCanvas.invalidate()
