@@ -22,7 +22,7 @@ class LeaderboardActivity : AppCompatActivity() {
 
         var scoresList = findViewById<ListView>(R.id.scoresList)
         var allScores = ArrayList<String>()
-        var allScorePairs = ArrayList<Pair<String, Int>>()
+        var allScorePairs = ArrayList<Score>()
         var mainBtn = findViewById<Button>(R.id.mainButton)
         var map :MutableMap<String, Int> = HashMap()
         var sortedMap : MutableMap<String, Int> = HashMap()
@@ -37,19 +37,17 @@ class LeaderboardActivity : AppCompatActivity() {
 
         db.collection("Scores").get()
                 .addOnCompleteListener { scores ->
-                    Log.i("score", "here")
                     if(scores.isSuccessful) {
                         for(score in scores.result!!) {
                             var userScore = score.data["score"].toString()
                             var userEmail = score.data["email"].toString()
-                            var scorePair = Pair(userEmail, userScore.toInt())
-                            allScorePairs.add(scorePair)
-
-                            allScorePairs.sortedBy { (key, value) -> value}
+                            var scoreData = Score(userEmail, userScore.toInt())
+                            allScorePairs.add(scoreData)
                         }
+                        allScorePairs.sortByDescending { it.score }
+                        Log.i("score", "all score pairs: ${allScorePairs.toString()}")
                         for(scorePair in allScorePairs) {
-                            var fullScore = "${scorePair.first} - ${scorePair.second}"
-                            Log.i("score", allScores.toString())
+                            var fullScore = "${scorePair.email} - ${scorePair.score}"
                             allScores.add(fullScore)
                         }
                         var listAdapter: ArrayAdapter<String> = ArrayAdapter(this, android.R.layout.simple_expandable_list_item_1, allScores)
@@ -59,7 +57,7 @@ class LeaderboardActivity : AppCompatActivity() {
     }
 
 
-
+    data class Score(val email: String, val score: Int)
 
     class myAdapter(var data: ArrayList<String>, var context: Context): BaseAdapter() {
         override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
