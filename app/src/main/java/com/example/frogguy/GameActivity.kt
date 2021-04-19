@@ -2,6 +2,7 @@ package com.example.frogguy
 
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
 import android.graphics.*
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +17,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat.startActivity
 import androidx.core.view.GestureDetectorCompat
 import kotlin.math.abs
 import kotlin.math.floor
@@ -381,7 +383,7 @@ class Frogger(var blockDim: Float, var vertBlocks: Float, var horzBlocks: Float,
                     alert.setTitle("Defeat")
                     alert.setMessage("You died, try again for a better score, or save this score to see where it is on the leaderboard? ")
                     alert.setPositiveButton("Try again", { dialogInterface: DialogInterface, i: Int -> score = 0}) // that's all we have to do
-                    alert.setNegativeButton("Save my score and exit", { dialogInterface: DialogInterface, i: Int -> }) // quit the game, and save the score :)
+                    alert.setNegativeButton("Save my score and exit") { dialogInterface: DialogInterface, i: Int -> } // quit the game, and save the score :)
                     alert.show()
                 }
             }
